@@ -1,6 +1,6 @@
 import { useDebounceFn } from '@vueuse/core';
 import { onMounted, ref, watch } from 'vue';
-import { IUser } from '../interfaces/users.interface';
+import { Info, IUser } from '../interfaces/users.interface';
 import { UsersService } from '../services/usuarios.service';
 
 export const useUsersComposableV2 = () => {
@@ -9,17 +9,15 @@ export const useUsersComposableV2 = () => {
     const users = ref<IUser[]>([]);
     const loading = ref<boolean>(false);
 
-    // ✅ Filtros locales dentro del composable
     const localSearch = ref<string>('');
     const localEmailFilter = ref<string>('');
     const localStateFilter = ref<string>('');
 
-    // Estados internos para el servicio
     const searchTerm = ref<string>('');
     const stateFilter = ref<string>('');
     const emailFilter = ref<string>('');
 
-    const pagination = ref({
+    const pagination = ref<Info>({
         total: 0,
         per_page: 10,
         last_page: 1,
@@ -53,12 +51,10 @@ export const useUsersComposableV2 = () => {
         }
     };
 
-    // ✅ UN SOLO DEBOUNCE UNIVERSAL para TODOS los filtros
     const debounceFilters = useDebounceFn((search: string, email: string, state: string) => {
         getUsers(search, 1, state, email); // Siempre página 1 cuando filtramos
     }, 1000);
 
-    // ✅ WATCH para filtros - DENTRO del composable (lógica)
     watch(
         [localSearch, localEmailFilter, localStateFilter],
         ([search, email, state]) => {

@@ -1,5 +1,5 @@
 import { useDebounceFn } from '@vueuse/core';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { ICategories } from '../interfaces/categories.interface';
 import { CategoriesService } from '../services/categorias.service';
 
@@ -8,7 +8,9 @@ export const useCategories = () => {
 
     const categories = ref<ICategories[]>([]);
     const loading = ref<boolean>(false);
+
     const searchTearm = ref<string>('');
+    const localSearch = ref<string>('');
 
     const pagination = ref({
         total: 0,
@@ -51,9 +53,22 @@ export const useCategories = () => {
         await getCategories(searchTearm.value);
     };
 
-    const debounceSearch = useDebounceFn((value: string) => {
-        getCategories(value, 1);
+    const debounceFilters = useDebounceFn((search: string) => {
+        getCategories(search, 1);
     }, 1000);
+
+    watch(
+        [localSearch],
+        ([search]) => {
+            // Aplicar debounce solo si tiene sentido buscar
+            const searchValid = search.length >= 3 || search.length === 0;
+
+            if (searchValid) {
+                debounceFilters(search);
+            }
+        },
+        { flush: 'post' },
+    );
 
     onMounted(async () => {
         await getCategories();
@@ -66,10 +81,12 @@ export const useCategories = () => {
         pagination,
         searchTearm,
 
+        // filtros locales
+        localSearch,
+
         // metodosk
         getCategories,
         refreshPage,
         onPageChange,
-        debounceSearch,
     };
 };

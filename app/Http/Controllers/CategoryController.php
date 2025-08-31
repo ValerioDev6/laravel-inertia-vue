@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
@@ -54,7 +56,7 @@ class CategoryController extends Controller
         $query = Category::select('categories.*')
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
-                    $sub->where('categories.nae', 'LIKE', "%{$search}%");
+                    $sub->where('categories.name', 'LIKE', "%{$search}%");
                 });
             })
             ->orderBy('categories.id', "desc");
@@ -81,15 +83,20 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('categories/create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(CategoryRequest $request)
     {
-        //
+        Category::create([
+            'name' => $request->name,
+            'description' => $request->description
+        ]);
+
+        return redirect()->route('categories.index')->with('success', 'Categoria creada con exito!');
     }
 
     /**
@@ -103,24 +110,37 @@ class CategoryController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Category $category)
     {
-        //
+        // $category = Category::findOrFail($category->id);
+        return Inertia::render('categories/edit', compact('category'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
-        //
+        $category->update([
+            'name' => $request->name,
+            'description' => $request->description
+        ]);
+
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'Categoría actualizada con éxito.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Category $category)
     {
-        //
+        $category = Category::findOrFail($category->id);
+        $category->delete();
+
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'Categoría eliminada con éxito.');
     }
 }

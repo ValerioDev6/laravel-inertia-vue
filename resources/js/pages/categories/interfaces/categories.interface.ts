@@ -5,6 +5,7 @@ export interface ICategoriesResponse {
 }
 
 export interface ICategories {
+    id: number;
     name: string;
     description: string;
     created_at: Date;

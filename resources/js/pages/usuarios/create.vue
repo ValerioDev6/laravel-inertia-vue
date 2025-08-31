@@ -3,7 +3,7 @@
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-6">
-            <h1 class="text-xl font-semibold">Crear Usuario</h1>
+            <h2 class="text-xl font-semibold">Crear Usuario</h2>
 
             <form @submit.prevent="submit" class="grid max-w-lg gap-4">
                 <!-- Nombre -->

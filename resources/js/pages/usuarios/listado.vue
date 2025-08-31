@@ -15,19 +15,8 @@ import { watch } from 'vue';
 import { useUsersComposableV2 } from './composables/useUsers.composablev2';
 
 // Composables
-const {
-    users,
-    loading,
-    pagination,
-    getUsers,
-    searchTerm,
-    stateFilter,
-    emailFilter,
-    localSearch, // ✅ Del composable
-    localEmailFilter, // ✅ Del composable
-    localStateFilter, // ✅ Del composable
-    refreshPage,
-} = useUsersComposableV2();
+const { users, loading, pagination, getUsers, searchTerm, stateFilter, emailFilter, localSearch, localEmailFilter, localStateFilter, refreshPage } =
+    useUsersComposableV2();
 
 const { page, goToPage, resetPage } = usePagination();
 
@@ -45,13 +34,9 @@ const stateOptions = [
 ];
 
 // ✅ SOLO UN WATCH - para paginación (UI)
-watch(
-    page,
-    (newPage) => {
-        getUsers(searchTerm.value, newPage, stateFilter.value, emailFilter.value);
-    },
-    { immediate: true },
-);
+watch(page, (newPage) => {
+    getUsers(searchTerm.value, newPage, stateFilter.value, emailFilter.value);
+});
 
 // Funciones UI
 const clearFilters = () => {
