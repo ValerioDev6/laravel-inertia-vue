@@ -13,26 +13,15 @@ import {
 import { Button } from '@/components/ui/button';
 import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { BadgePlus, Eye, Package, Pencil, RefreshCw, Search, Trash2, X } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { route } from 'ziggy-js';
-
-interface Product {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-    stock: number;
-    stock_status?: string;
-    category: {
-        name: string;
-    };
-    created_at: string;
-}
+import type { Category, Product } from './interfaces/products.interface';
 
 interface Props {
     products: {
@@ -45,6 +34,7 @@ interface Props {
             per_page: number;
         };
     };
+    categories: Category[];
 }
 
 const props = defineProps<Props>();
@@ -56,54 +46,74 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-// Estados locales
+// Estados
 const loading = ref(false);
 const localSearch = ref('');
-const filterProducts = () => {
-    const params = localSearch.value.trim() ? { search: localSearch.value.trim() } : {};
+const localCategoryId = ref('');
 
-    router.get(route('products.index'), params, {
+const filterProducts = () => {
+    const filters: any = {
+        search: '',
+        category_id: '',
+    };
+
+    if (localSearch.value.trim()) {
+        filters.search = localSearch.value.trim();
+    }
+
+    if (localCategoryId.value) {
+        filters.category_id = localCategoryId.value;
+    }
+
+    router.get(route('products.index'), filters, {
         preserveState: true,
         preserveScroll: true,
-        onStart: () => (loading.value = true),
-        onFinish: () => (loading.value = false),
     });
 };
 
-// Métodos
-const handleRefresh = async () => {
-    loading.value = true;
-    router.reload({
-        onFinish: () => {
-            loading.value = false;
-        },
-    });
-};
-
+// Funciones
 const clearFilters = () => {
     localSearch.value = '';
+    localCategoryId.value = '';
+    router.get(route('products.index'), {}, { preserveState: true });
+};
+
+const handleRefresh = () => {
+    loading.value = true;
+    router.reload({
+        onFinish: () => (loading.value = false),
+    });
 };
 
 const confirmDelete = (id: number) => {
     router.delete(route('products.destroy', { product: id }), {
         preserveScroll: true,
         onSuccess: () => {
-            // Producto eliminado exitosamente
+            // Producto eliminado
         },
         onError: () => {
-            // Error al eliminar
+            // Error
         },
     });
 };
-const goToPage = (page) => {
-    router.get(
-        route('products.index'),
-        { page },
-        {
-            preserveScroll: true,
-        },
-    );
+
+const goToPage = (page: number) => {
+    const currentFilters: any = {};
+
+    if (localSearch.value.trim()) {
+        currentFilters.search = localSearch.value.trim();
+    }
+
+    if (localCategoryId.value) {
+        currentFilters.category_id = localCategoryId.value;
+    }
+
+    router.get(route('products.index'), { ...currentFilters, page }, { preserveScroll: true });
 };
+
+watch(localCategoryId, (newValue) => {
+    filterProducts();
+});
 </script>
 
 <template>
@@ -129,6 +139,7 @@ const goToPage = (page) => {
 
             <!-- Filtros -->
             <div class="flex flex-wrap items-end gap-3 rounded-lg border bg-muted/30 p-4">
+                <!-- Búsqueda por nombre -->
                 <div class="min-w-[200px] flex-1 space-y-1">
                     <Label for="search" class="text-xs text-muted-foreground">Buscar productos</Label>
                     <div class="relative">
@@ -137,7 +148,28 @@ const goToPage = (page) => {
                     </div>
                 </div>
 
+                <!-- Filtro por categoría -->
+                <div class="min-w-[200px] space-y-1">
+                    <Label for="category" class="text-xs text-muted-foreground">Filtrar por categoría</Label>
+                    <Select v-model="localCategoryId">
+                        <SelectTrigger class="h-9">
+                            <SelectValue placeholder="Seleccionar categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas las categorías</SelectItem>
+                            <SelectItem v-for="category in categories" :key="category.id" :value="category.id.toString()">
+                                {{ category.name }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <!-- Botones de acción -->
                 <div class="flex gap-2">
+                    <Button @click="filterProducts" :disabled="loading" variant="default" size="sm">
+                        <Search class="mr-2 h-4 w-4" />
+                        Filtrar
+                    </Button>
                     <Button @click="clearFilters" :disabled="loading" variant="outline" size="sm">
                         <X class="mr-2 h-4 w-4" />
                         Limpiar
@@ -156,7 +188,6 @@ const goToPage = (page) => {
                     <Package class="mb-2 h-8 w-8 text-muted-foreground" />
                     <p class="text-sm text-muted-foreground">No se encontraron productos</p>
                 </div>
-
                 <!-- ✅ TABLA CON DATOS -->
                 <div v-else class="rounded-md border">
                     <Table>
@@ -167,6 +198,8 @@ const goToPage = (page) => {
                                 <TableHead>Categoría</TableHead>
                                 <TableHead>Precio</TableHead>
                                 <TableHead>Stock</TableHead>
+                                <TableHead>Fecha de Creacion</TableHead>
+
                                 <TableHead class="text-center">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -206,6 +239,7 @@ const goToPage = (page) => {
                                         {{ product.stock_status || `${product.stock} unidades` }}
                                     </span>
                                 </TableCell>
+                                <TableCell class="font-medium"> {{ product.created_at }} </TableCell>
 
                                 <TableCell class="flex justify-center gap-2">
                                     <Button size="sm" variant="outline">

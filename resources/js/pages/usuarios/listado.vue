@@ -1,19 +1,32 @@
 <script setup lang="ts">
 import ButtonPagination from '@/common/components/ButtonPagination.vue';
 import { usePagination } from '@/common/composable/usePagination';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import DataTable from '@/components/ui/data-table/DataTable.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { BreadcrumbItem } from '@/types';
-import { columns } from '@/utils/TableColumns/usuario.columns';
 import { Head, Link } from '@inertiajs/vue3';
-import { BadgePlus, RefreshCw, Search, Users, X } from 'lucide-vue-next';
+import { BadgePlus, Eye, Pencil, RefreshCw, Search, Trash2, Users, X } from 'lucide-vue-next';
 import { watch } from 'vue';
+import { route } from 'ziggy-js';
+import { useStateUser } from './actions/user-state-user.action';
 import { useUsersComposableV2 } from './composables/useUsers.composablev2';
-
+import { IUser } from './interfaces/users.interface';
 // Composables
 const { users, loading, pagination, getUsers, searchTerm, stateFilter, emailFilter, localSearch, localEmailFilter, localStateFilter, refreshPage } =
     useUsersComposableV2();
@@ -26,7 +39,9 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/usuarios',
     },
 ];
-
+const getImageUrl = (imagePath: string) => {
+    return `${import.meta.env.VITE_BASE_URL}/storage/${imagePath}`;
+};
 // Variables locales
 const stateOptions = [
     { value: 'A', label: 'Activo' },
@@ -52,6 +67,16 @@ const handleRefresh = async () => {
 const handlePageChange = (newPage: number) => {
     goToPage(newPage);
 };
+
+const confirmDelete = (id: number) => {};
+
+const toggleState = async (user: IUser) => {
+    const newState = user.state === 'A' ? 'I' : 'A';
+    // 1. Actualizar en servidor
+    await useStateUser(user.id, newState);
+    // 2. Actualizar localmente (instantáneo)
+    handleRefresh();
+};
 </script>
 
 <template>
@@ -66,7 +91,7 @@ const handlePageChange = (newPage: number) => {
                     <h2 class="text-2xl font-bold">Usuarios</h2>
                 </div>
                 <div>
-                    <Link href="/users/create">
+                    <Link href="/usuarios/create">
                         <Button variant="outline" size="sm" class="mr-2">
                             <BadgePlus class="mr-2 h-4 w-4" />
                             Crear
@@ -133,7 +158,95 @@ const handlePageChange = (newPage: number) => {
                     <p class="text-sm text-muted-foreground">No se encontraron usuarios</p>
                 </div>
 
-                <DataTable v-else :columns="columns" :data="users" />
+                <div class="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>ID</TableHead>
+                                <TableHead>Imagen</TableHead>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead class="text-center">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow v-for="user in users" :key="user.id">
+                                <!-- ID -->
+                                <TableCell class="text-left font-medium">{{ user.id }}</TableCell>
+
+                                <!-- IMAGEN -->
+                                <TableCell class="text-center">
+                                    <div v-if="user.file" class="flex justify-center">
+                                        <img :src="getImageUrl(user.file)" :alt="user.name" class="h-12 w-12 rounded-full object-cover" />
+                                    </div>
+                                    <div v-else class="text-center text-xs text-gray-400">Sin imagen</div>
+                                </TableCell>
+
+                                <!-- NOMBRE -->
+                                <TableCell class="text-left font-medium">{{ user.name }}</TableCell>
+
+                                <!-- EMAIL -->
+                                <TableCell class="text-left font-medium">{{ user.email }}</TableCell>
+
+                                <!-- ESTADO -->
+                                <TableCell class="text-center">
+                                    <Badge :class="user.state === 'A' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="font-bold">
+                                        {{ user.state === 'A' ? 'ACTIVO' : 'INACTIVO' }}
+                                    </Badge>
+                                </TableCell>
+
+                                <!-- ACCIONES -->
+                                <TableCell class="flex justify-center gap-2">
+                                    <!-- Ver -->
+                                    <Link :href="route('usuarios.show', { user: user.id })">
+                                        <Button size="sm" variant="outline">
+                                            <Eye class="h-4 w-4" />
+                                        </Button>
+                                    </Link>
+
+                                    <!-- Editar -->
+                                    <Link :href="route('usuarios.edit', user.id)">
+                                        <Button size="sm" variant="outline">
+                                            <Pencil class="h-4 w-4" />
+                                        </Button>
+                                    </Link>
+
+                                    <!-- CAMBIAR ESTADO -->
+                                    <Button
+                                        class="cursor-pointer"
+                                        size="sm"
+                                        :variant="user.state === 'A' ? 'secondary' : 'default'"
+                                        @click="toggleState(user)"
+                                    >
+                                        {{ user.state === 'A' ? 'Desactivar' : 'Activar' }}
+                                    </Button>
+
+                                    <!-- Eliminar -->
+                                    <AlertDialog>
+                                        <AlertDialogTrigger as-child>
+                                            <Button size="sm" variant="destructive">
+                                                <Trash2 class="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Esta acción eliminará al usuario <strong>{{ user.name }}</strong> de forma permanente.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction @click="confirmDelete(user.id)"> Sí, eliminar </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
 
             <!-- Info simple de paginación -->

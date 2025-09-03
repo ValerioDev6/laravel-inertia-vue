@@ -146,7 +146,11 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User $user) {}
+    public function show(User $user)
+    {
+
+        return Inertia::render('usuarios/show', compact('user'));
+    }
 
     /**
      * Show the form for editing the specified resource.
@@ -200,7 +204,20 @@ class UserController extends Controller
         }
     }
 
-    public function state(Request $request) {}
+    public function state(Request $request)
+    {
+
+        $idUsuario   = $request->IdUsuario;
+        $cState      = $request->cState;
+
+        DB::select('call sp_update_user_state(?,?)', [$idUsuario, $cState]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Usuario activado exitosamente',
+        ]);
+    }
+
 
     /**
      * Remove the specified resource from storage.

@@ -1,5 +1,6 @@
 import Badge from '@/components/ui/badge/Badge.vue';
 import Button from '@/components/ui/button/Button.vue';
+import { useStateUser } from '@/pages/usuarios/actions/user-state-user.action';
 import { Link, router } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { Eye, Pencil, Trash2 } from 'lucide-vue-next';
@@ -71,6 +72,8 @@ export const columns: ColumnDef<User>[] = [
         header: () => h('div', { class: 'text-center' }, 'Acciones'),
         cell: ({ row }) => {
             const id = row.getValue('id');
+            const currentState = row.getValue('state') as string;
+            const isActive = currentState === 'A';
 
             return h('div', { class: 'flex justify-center gap-2' }, [
                 // Ver
@@ -89,6 +92,21 @@ export const columns: ColumnDef<User>[] = [
                         href: `/usuarios/${id}/edit`,
                     },
                     () => h(Button, { size: 'sm', variant: 'outline' }, () => h(Pencil, { class: 'w-4 h-4' })),
+                ),
+
+                // Botón más simple de toggle
+                h(
+                    Button,
+                    {
+                        size: 'sm',
+                        variant: isActive ? 'destructive' : 'default',
+                        onClick: async () => {
+                            const newState = isActive ? 'I' : 'A';
+                            await useStateUser(id as number, newState);
+                            router.get('/usuarios');
+                        },
+                    },
+                    () => (isActive ? 'Desactivar' : 'Activar'),
                 ),
 
                 // Eliminar

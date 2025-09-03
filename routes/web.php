@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PermisosController;
 use App\Http\Controllers\ProductController;
@@ -22,8 +23,20 @@ Route::get('dashboard', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    // // ORDNENS
     Route::get('/pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
-    Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+    Route::get('/pedidos/create', [PedidoController::class, 'create'])->name('pedidos.create');
+    Route::post('/pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
+    Route::get('/pedidos/export/', [PedidoController::class, 'export']);
+
+    // CLIENTES
+    Route::get('/clients', [CustomerController::class, 'index'])->name('clients.index');
+    Route::get('/clients/create', [CustomerController::class, 'create'])->name('clients.create');
+    Route::post('/clients', [CustomerController::class, 'store'])->name('clients.store');
+    Route::get('/clients/{client}/edit', [CustomerController::class, 'edit'])->name('clients.edit');
+    Route::put('/clients/{client}', [CustomerController::class, 'update'])->name('clients.update');
+    Route::delete('/clients/{client}', [CustomerController::class, 'destroy'])->name('clients.destroy');
+
     // CATEGORIAS
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
@@ -35,6 +48,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // PRODUCTOS
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+
     // Route::get('/products', [ProductController::class, 'store'])->name('products.store');
     // Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
     // Route::get('/products/{product}', [ProductController::class, 'update'])->name('products.update');
@@ -48,13 +63,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/usuarios/create', [UserController::class, 'create'])->name('usuarios.create');
     Route::post('/usuarios', [UserController::class, 'store'])->name('usuarios.store');
     Route::get('/usuarios/{user}/edit ', [UserController::class, 'edit'])->name('usuarios.edit');
+    Route::get('/usuarios/{user} ', [UserController::class, 'show'])->name('usuarios.show');
     Route::put('/usuarios/{user}', [UserController::class, 'update'])->name('usuarios.update');
     Route::delete('/usuarios/{user}', [UserController::class, 'destroy'])->name('usuarios.destroy');
     Route::post('/usuarios/state', [UserController::class, 'state'])->name('usuarios.state');
 
+    // ROLES
     Route::get('/roles', [RolController::class, 'index'])->name('roles.index');
-    Route::get('/permisos', [PermisosController::class, 'index'])->name('permisos.index');
+    Route::get('/roles/create', [RolController::class, 'create'])->name('roles.create');
+    Route::post('/roles', [RolController::class, 'store'])->name('roles.store');
+    Route::get('/roles/{role}/edit', [RolController::class, 'edit'])->name('roles.edit');
+    Route::put('/roles/{role}', [RolController::class, 'update'])->name('roles.update');
+    Route::delete('/roles/{role}', [RolController::class, 'destroy'])->name('roles.destroy');
 
+
+    Route::get('/permisos', [PermisosController::class, 'index'])->name('permisos.index');
     Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
 
     // RUTAS API PARA AXIOS (devuelven JSON)
@@ -64,7 +87,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
         Route::get('/roles', [RolController::class, 'index'])->name('api.roles.index');
-        Route::get('/clients', [ClientController::class, 'index'])->name('api.clients.index');
     });
 });
 

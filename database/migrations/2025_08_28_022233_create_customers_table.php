@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('document')->index();
             $table->string('phone')->nullable();
             $table->string('email')->index()->nullable();
-
             $table->timestamps();
         });
     }

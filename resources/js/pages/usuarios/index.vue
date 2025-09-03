@@ -13,7 +13,10 @@ import { columns } from '@/utils/TableColumns/usuario.columns';
 import { Head, Link } from '@inertiajs/vue3';
 import { BadgePlus, Filter, RefreshCw, Search, Users, X } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
+import { route } from 'ziggy-js';
+import { useStateUser } from './actions/user-state-user.action';
 import { useUsersComposable } from './composables/useUsers.composable';
+import { IUser } from './interfaces/users.interface';
 
 const { users, loading, pagination, getUsers, searchTearm, stateFilter, emailFilter, debounceSearch } = useUsersComposable();
 const { page, goToPage, resetPage } = usePagination();
@@ -65,6 +68,12 @@ const handleRefresh = async () => {
 const handlePageChange = (newPage: number) => {
     goToPage(newPage);
 };
+
+const toggleState = async (user: IUser) => {
+    const newState = user.state === 'A' ? 'I' : 'A';
+    await useStateUser(user.id, newState);
+    handleRefresh();
+};
 </script>
 
 <template>
@@ -78,7 +87,7 @@ const handlePageChange = (newPage: number) => {
                     <h2 class="text-2xl font-bold">Usuarios</h2>
                 </div>
                 <div>
-                    <Link href="/usuarios/create">
+                    <Link :href="route('usuarios.create')">
                         <Button variant="outline" size="sm" class="mr-2">
                             <BadgePlus class="mr-2 h-4 w-4" />
                             Crear

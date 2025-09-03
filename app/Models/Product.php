@@ -17,6 +17,25 @@ class Product extends Model
         'categorie_id',
     ];
 
+
+    // SCOPE para filtros limpios
+    public function scopeFilter($query, array $filters)
+    {
+        // Filtro por búsqueda (nombre y descripción)
+        $query->when($filters['search'] ?? false, function ($query, $search) {
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%");
+        });
+
+        // Filtro por categoría (por ID)
+        $query->when($filters['category_id'] ?? false, function ($query, $categoryId) {
+            $query->where('categorie_id', $categoryId);
+        });
+
+        return $query;
+    }
+
+
     /** -------------- ACCESOR -------------- */
     public function getStockStatusAttribute(): string
     {
